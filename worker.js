@@ -2,7 +2,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // استقبال رسائل الشات
     if (url.pathname === "/api/chat" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -21,30 +20,42 @@ export default {
             messages: [
               {
                 role: "system",
-                content:
-                  "أنت VOID، مساعد ذكي يتحدث العربية. ساعد في البرمجة والأمن السيبراني الدفاعي وحماية المواقع والأجهزة وتحليل المشكلات. لا تقدم تعليمات لاختراق أنظمة أو إيذاء الآخرين. كن واضحًا ومفيدًا."
+                content: "أنت VOID، مساعد ذكي يتحدث العربية. ساعد في البرمجة والأمن السيبراني الدفاعي وحماية المواقع والأجهزة. كن واضحًا ومفيدًا."
               },
               {
                 role: "user",
                 content: message
               }
-            ]
+            ],
+            chat_template_kwargs: {
+              enable_thinking: false
+            }
           }
         );
 
-        return Response.json({
-          reply: result.response || result.output_text || result.text || "لم يصل رد."
-        });
+        const reply =
+          result?.choices?.[0]?.message?.content ||
+          result?.response ||
+          result?.output_text ||
+          result?.text;
+
+        if (!reply) {
+          return Response.json(
+            { error: "النموذج لم يُرجع نصًا. حاول مرة أخرى." },
+            { status: 502 }
+          );
+        }
+
+        return Response.json({ reply });
 
       } catch (error) {
         return Response.json(
-          { error: "حدث خطأ: " + error.message },
+          { error: "خطأ من الذكاء الاصطناعي: " + error.message },
           { status: 500 }
         );
       }
     }
 
-    // عرض واجهة VOID
     return env.ASSETS.fetch(request);
   }
 };
