@@ -36,20 +36,10 @@ export default {
           }
         );
 
-        const reply =
-          result?.response ??
-          result?.output_text ??
-          result?.text ??
-          result?.choices?.[0]?.message?.content;
-
-        if (!reply) {
-          return Response.json({
-            error: "النموذج لم يُرجع نصًا متوقعًا.",
-            details: result
-          }, { status: 502 });
-        }
-
-        return Response.json({ reply });
+        return Response.json({
+          diagnostic: true,
+          result: result
+        });
 
       } catch (error) {
         return Response.json(
