@@ -5,7 +5,10 @@ export default {
 
     if (url.pathname === "/api/chat") {
       if (request.method !== "POST") {
-        return Response.json({ error: "POST required" }, { status: 405 });
+        return Response.json(
+          { error: "POST required" },
+          { status: 405 }
+        );
       }
 
       try {
@@ -17,7 +20,10 @@ export default {
         const message = String(body.message || "").trim();
 
         if (!message) {
-          return Response.json({ error: "اكتب رسالة الأول" }, { status: 400 });
+          return Response.json(
+            { error: "اكتب رسالة الأول" },
+            { status: 400 }
+          );
         }
 
         const result = await env.AI.run(
@@ -38,12 +44,16 @@ export default {
 
         return Response.json({
           diagnostic: true,
-          result: result
+          result: result,
+          resultType: typeof result,
+          resultKeys: Object.keys(result || {})
         });
 
       } catch (error) {
         return Response.json(
-          { error: error.message || "حصل خطأ غير معروف" },
+          {
+            error: error.message || "حصل خطأ غير معروف"
+          },
           { status: 500 }
         );
       }
