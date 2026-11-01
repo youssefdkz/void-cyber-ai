@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -37,6 +38,7 @@ line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere
 }
 .user{align-self:flex-start;background:#28213d}
 .ai{align-self:flex-end;background:#151521;border:1px solid #30264a}
+.error{border-color:#9b3434;color:#ffaaaa}
 footer{padding:13px;border-top:1px solid #242239}
 form{
 max-width:850px;margin:auto;display:flex;gap:9px;
@@ -75,7 +77,7 @@ button:disabled{opacity:.5}
 <input id="prompt" placeholder="اسأل VOID أي شيء..." autocomplete="off">
 <button id="send" type="submit">إرسال</button>
 </form>
-<div class="note">VOID AI · استخدم المعرفة بمسؤولية</div>
+<div class="note" id="status">VOID AI · استخدم المعرفة بمسؤولية</div>
 </footer>
 
 <script>
@@ -83,6 +85,7 @@ const form=document.getElementById('chatForm');
 const input=document.getElementById('prompt');
 const messages=document.getElementById('messages');
 const send=document.getElementById('send');
+const statusText=document.getElementById('status');
 
 function addMessage(text,type){
 const div=document.createElement('div');
@@ -102,8 +105,9 @@ document.getElementById('welcome')?.remove();
 addMessage(text,'user');
 input.value='';
 send.disabled=true;
+statusText.textContent='VOID يفكر الآن...';
 
-const reply=addMessage('جاري التفكير...','ai');
+const reply=addMessage('جاري الاتصال بالذكاء الاصطناعي...','ai');
 
 try{
 const response=await fetch('/api/chat',{
@@ -111,14 +115,46 @@ method:'POST',
 headers:{'Content-Type':'application/json'},
 body:JSON.stringify({message:text})
 });
-const data=await response.json();
-if(!response.ok)throw new Error(data.error||'حدث خطأ');
-reply.textContent=data.reply||data.output_text||'لم يصل رد.';
-}catch(err){
-reply.textContent='تعذر الاتصال بالخادم. '+err.message;
+
+const raw=await response.text();
+let data;
+
+try{
+data=JSON.parse(raw);
+}catch{
+throw new Error('استجابة غير مفهومة من الخادم: '+raw.slice(0,500));
 }
+
+if(!response.ok){
+throw new Error(data.error||data.reply||'خطأ HTTP '+response.status);
+}
+
+let result=data.reply||data.output_text;
+
+if(!result&&data.result){
+const r=data.result;
+result=r.response||r.output_text||r.text||
+r.content||r.choices?.[0]?.message?.content||
+JSON.stringify(r);
+}
+
+if(typeof result==='object')result=JSON.stringify(result,null,2);
+
+if(!result){
+throw new Error('الخادم رد بدون نص. البيانات: '+JSON.stringify(data).slice(0,1000));
+}
+
+reply.textContent=result;
+statusText.textContent='VOID AI · متصل';
+
+}catch(err){
+reply.textContent='تفاصيل المشكلة:\n'+err.message;
+reply.classList.add('error');
+statusText.textContent='حدث خطأ في الاتصال';
+}finally{
 send.disabled=false;
 input.focus();
+}
 });
 </script>
 </body>
