@@ -5,10 +5,7 @@ export default {
 
     if (url.pathname === "/api/chat") {
       if (request.method !== "POST") {
-        return Response.json(
-          { error: "POST required" },
-          { status: 405 }
-        );
+        return Response.json({ error: "POST required" }, { status: 405 });
       }
 
       try {
@@ -20,19 +17,16 @@ export default {
         const message = String(body.message || "").trim();
 
         if (!message) {
-          return Response.json(
-            { error: "اكتب رسالة الأول" },
-            { status: 400 }
-          );
+          return Response.json({ error: "اكتب رسالة الأول" }, { status: 400 });
         }
 
         const result = await env.AI.run(
-          "@cf/google/gemma-4-26b-a4b-it",
+          "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
           {
             messages: [
               {
                 role: "system",
-                content: "أنت VOID، مساعد عربي مفيد. أجب باللغة العربية بوضوح."
+                content: "أنت VOID، مساعد عربي ذكي. أجب بوضوح وباللغة التي يستخدمها المستخدم."
               },
               {
                 role: "user",
@@ -42,13 +36,24 @@ export default {
           }
         );
 
-        return Response.json({
-          reply: JSON.stringify(result)
-        });
+        const reply =
+          result?.response ??
+          result?.output_text ??
+          result?.text ??
+          result?.choices?.[0]?.message?.content;
+
+        if (!reply) {
+          return Response.json({
+            error: "النموذج اشتغل لكن صيغة الرد غير متوقعة.",
+            details: result
+          }, { status: 502 });
+        }
+
+        return Response.json({ reply });
 
       } catch (error) {
         return Response.json(
-          { error: error.message },
+          { error: error.message || "حصل خطأ غير معروف" },
           { status: 500 }
         );
       }
