@@ -21,12 +21,12 @@ export default {
         }
 
         const result = await env.AI.run(
-          "@cf/deepseek-ai/deepseek-v4.1-flash-1017",
+          "@cf/meta/llama-3.2-3b-instruct",
           {
             messages: [
               {
                 role: "system",
-                content: "أنت VOID، مساعد عربي ذكي. أجب بوضوح وباللغة التي يستخدمها المستخدم."
+                content: "أنت VOID، مساعد عربي ذكي. أجب بوضوح وباختصار، واستخدم لغة المستخدم."
               },
               {
                 role: "user",
@@ -44,7 +44,7 @@ export default {
 
         if (!reply) {
           return Response.json({
-            error: "النموذج اشتغل لكن صيغة الرد غير متوقعة.",
+            error: "النموذج لم يُرجع نصًا متوقعًا.",
             details: result
           }, { status: 502 });
         }
